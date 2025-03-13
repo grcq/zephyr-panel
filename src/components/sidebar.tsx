@@ -19,8 +19,8 @@ type SidebarItemProps = {
 function SidebarItem({ name, path, exact = false, expanded = false, icon: Icon }: SidebarItemProps) {
     const pathname = usePathname();
     return (
-        <Button variant={(exact ? pathname == path : pathname.startsWith(path) ) ? "default" : "ghost"} className={cn("lg:w-full", expanded ? 'w-full' : 'w-12')}>
-            <Link href={path} className="flex w-full items-center">
+        <Button variant={(exact ? pathname == path : pathname.startsWith(path) ) ? "default" : "ghost"} className={cn("lg:w-full p-0", expanded ? 'w-full' : 'w-12')}>
+            <Link href={path} className="flex w-full items-center p-4">
                 <Icon className="mr-2" />
                 <span className={cn("lg:flex", expanded ? 'flex' : 'hidden')}>{name}</span>
             </Link>
