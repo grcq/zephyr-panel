@@ -15,7 +15,7 @@ import { Textarea } from "@/components/ui/textarea";
 const templateSchema = z.object({
     name: z.string().nonempty().max(60),
     description: z.string().max(255),
-    statup: z.string().max(255).optional(),
+    startup: z.string().max(255).optional(),
 });
 
 function TemplateForm() {
@@ -62,7 +62,7 @@ function TemplateForm() {
                                         <FormMessage />
                                     </FormItem>
                                 )} />
-                                <FormField control={form.control} name="statup" render={({ field }) => (
+                                <FormField control={form.control} name="startup" render={({ field }) => (
                                     <FormItem className="w-full">
                                         <FormLabel>Statup Command <span className="text-red-400">*</span></FormLabel>
                                         <FormControl>
