@@ -30,7 +30,7 @@ export default function RootLayout({
       >
         <div className="flex">
           <Sidebar />
-          <div className="p-4 h-[100vh] flex flex-col flex-1 space-y-4 scroll-smooth overflow-hidden">
+          <div className="p-4 h-[100vh] flex flex-col flex-1 space-y-4 scroll-smooth overflow-x-hidden overflow-y-auto scrollbar-thin scrollbar-track-background scrollbar-thumb-secondary scrollbar-thumb-rounded-full scrollbar-track-rounded-full">
             {children}
           </div>
         </div>

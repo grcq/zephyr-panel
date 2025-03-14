@@ -3,7 +3,7 @@
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { ColumnDef } from "@tanstack/react-table";
-import { EditIcon, MoreHorizontalIcon, TrashIcon } from "lucide-react";
+import { DownloadIcon, EditIcon, MoreHorizontalIcon, TrashIcon } from "lucide-react";
 import Link from "next/link";
 
 export type Template = {
@@ -37,6 +37,12 @@ export const columns: ColumnDef<Template>[] = [
                     </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent>
+                    <DropdownMenuItem>
+                        <Link href="/templates/0" className="flex items-center">
+                            <DownloadIcon className="mr-2" />
+                            Export
+                        </Link>
+                    </DropdownMenuItem>
                     <DropdownMenuItem>
                         <Link href="/templates/0/edit" className="flex items-center">
                             <EditIcon className="mr-2" />
