@@ -2,6 +2,13 @@ import { Button } from "@/components/ui/button";
 import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuLabel, ContextMenuSeparator, ContextMenuTrigger } from "@/components/ui/context-menu";
 import { cn } from "@/lib/utils";
 import { CpuIcon, HardDriveIcon, MemoryStickIcon, NetworkIcon, PlusIcon } from "lucide-react";
+import { fetch } from "@tauri-apps/plugin-http";
+
+async function getData() {
+    const res = await fetch("http://127.0.0.1:8083/api/servers");
+    const data = await res.json();
+    return data;
+}
 
 type ServerItemProps = {
     name: string;
@@ -84,16 +91,7 @@ export default function Servers() {
                 </div>
             </div>
             <div className="space-y-3 overflow-y-auto scrollbar-thin scrollbar-track-background scrollbar-thumb-secondary scrollbar-thumb-rounded-full scrollbar-track-rounded-full pr-1">
-                <ServerItem name="Server 1" description="This is a description of server 1." online={true} />
-                <ServerItem name="Server 2" description="This is a description of server 2." />
-                <ServerItem name="Server 3" description="This is a description of server 3." online={true} />
-                <ServerItem name="Server 4" description="This is a description of server 4." online={true} />
-                <ServerItem name="Server 5" description="This is a description of server 5." />
-                <ServerItem name="Server 6" description="This is a description of server 6." />
-                <ServerItem name="Server 7" description="This is a description of server 7." />
-                <ServerItem name="Server 8" description="This is a description of server 8." />
-                <ServerItem name="Server 9" description="This is a description of server 9." />
-                <ServerItem name="Server 10" description="This is a description of server 10." />
+                
             </div>
         </>
     )
