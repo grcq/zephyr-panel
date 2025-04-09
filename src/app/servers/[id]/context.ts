@@ -1,5 +1,6 @@
+import { createContext } from "react";
 
 
-export default {
+export const ServerContext = createContext< | null>(null);{
 
 }
