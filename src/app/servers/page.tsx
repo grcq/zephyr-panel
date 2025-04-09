@@ -9,9 +9,18 @@ import { useEffect, useState } from "react";
 import { Server } from "@/lib/types";
 import { redirect } from "next/navigation";
 
+const stateColors: { [key: number]: string } = {
+    0: "bg-green-400",
+    1: "bg-red-400",
+    2: "bg-yellow-400",
+    3: "bg-red-300",
+    4: "bg-gray-400",
+};
+
 async function getData() {
     const res = await fetch("http://127.0.0.1:8083/api/servers");
     const data = await res.json();
+    console.log(data)
     return data;
 }
 
@@ -19,7 +28,8 @@ function ServerItem({ server }: { server: Server }) {
     return (
         <ContextMenu>
             <ContextMenuTrigger asChild>
-                <div className="flex items-center justify-between p-4 bg-sidebar rounded-md shadow-sm ease-in-out transition-colors duration-200 cursor-pointer hover:bg-secondary">
+                <div className="flex select-none items-center justify-between p-4 bg-sidebar rounded-md shadow-sm ease-in-out transition-colors duration-200 cursor-pointer hover:bg-secondary"
+                    onClick={() => redirect(`/servers/${server.id}/console`)}>
                     <div id="info">
                         <h2 className="font-bold text-lg">{server.name}</h2>
                         <p className="text-sm">{server.description}</p>
@@ -59,13 +69,13 @@ function ServerItem({ server }: { server: Server }) {
                             </p>
                         </div>
                         <div id="status" className="h-full">
-                            <div className={cn("h-8 w-2 rounded-xl", false ? "bg-green-400" : "bg-red-400")}></div>
+                            <div className={cn("h-8 w-2 rounded-xl", stateColors[server.state])}></div>
                         </div>
                     </div>
                 </div>
             </ContextMenuTrigger>
             <ContextMenuContent className="w-64">
-                <ContextMenuLabel>{"Server Name"}</ContextMenuLabel>
+                <ContextMenuLabel>{server.name}</ContextMenuLabel>
                 <ContextMenuSeparator />
                 <ContextMenuItem>
                     Manage

@@ -43,4 +43,40 @@ export interface Server {
     name: string;
     description: string;
     template: number;
+    
+    container: ServerContainer;
+    resources: ServerResources;
+    allocations: ServerAllocation[];
+
+    createdAt: number;
+    updatedAt: number;
+
+    state: number;
+}
+
+export const ServerState: string[] = [
+    "Running",
+    "Stopped",
+    "Starting",
+    "Stopping",
+    "Unknown",
+]
+
+export interface ServerContainer {
+    startup_command: string;
+    image: string;
+    installed: boolean;
+    variables: { [key: string]: string };
+}
+
+export interface ServerResources {
+    memory: number;
+    cpu: number;
+    disk: number;
+}
+
+export interface ServerAllocation {
+    ip: string;
+    port: number;
+    primary: boolean;
 }
