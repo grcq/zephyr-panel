@@ -1,15 +1,17 @@
 'use client';
 
-import { ITerminalOptions, Terminal } from "xterm";
-import { FitAddon } from "xterm-addon-fit";
-import { SearchAddon } from "xterm-addon-search";
-import { SearchBarAddon } from "xterm-addon-search-bar";
-import { WebLinksAddon } from "xterm-addon-web-links";
+import { ITerminalOptions, Terminal } from "@xterm/xterm";
+import { FitAddon } from "@xterm/addon-fit";
+import { SearchAddon } from "@xterm/addon-search";
+import { SearchBarAddon } from "@/plugins/searchbar/XtermSearchBarAddon";
+import { WebLinksAddon } from "@xterm/addon-web-links";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { usePresistedState } from "@/plugins/usePresistedState";
 import useEventListener from "@/plugins/useEventListener";
 import { Input } from "@/components/ui/input";
+import classNames from "classnames";
 import { theme as th } from "twin.macro";
+import styles from './console.module.scss';
 
 const terminalProps: ITerminalOptions = {
     disableStdin: true,
@@ -98,24 +100,31 @@ export default function ConsoleContainer({ serverId }: ConsoleContainerProps) {
     });
     
     return (
-        <div className={"relative flex flex-col w-full"}>
-            <div className={""}>
+        <div className={classNames("relative flex flex-col w-full", styles.terminal)}>
+            <div className={"rounded-t p-2 bg-[rgb(18,18,18)]"}>
                 <div className="h-full">
-                    <div className={"h-full "} ref={ref}></div>
+                    <div className={"h-full"} id={styles.terminal} ref={ref}></div>
                 </div>
             </div>
             <div className="relative -ml-4 sm:ml-0 w-[calc(100% + 2rem)] sm:w-full">
-                <Input type="text" className="rounded-t-none" placeholder="Type a command..." onKeyDown={(e) => {
-                    if (e.key === "Enter") {
-                        const command = (e.target as HTMLInputElement).value;
-                        if (command.trim() === "") return;
+                <Input 
+                    type="text"
+                    className="rounded-t-none outline-none" 
+                    placeholder="Type a command..."
+                    onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                            const command = (e.target as HTMLInputElement).value;
+                            if (command.trim() === "") return;
 
-                        handleOutput(command, false);
-                        setHistory([...history, command]);
-                        setHistoryIndex(-1);
-                        (e.target as HTMLInputElement).value = "";
-                    }
-                }} autoCorrect={'off'} autoCapitalize={'none'} />
+                            handleOutput(command, false);
+                            setHistory([...history, command]);
+                            setHistoryIndex(-1);
+                            (e.target as HTMLInputElement).value = "";
+                        }
+                    }}
+                    autoCorrect={'off'}
+                    autoCapitalize={'none'}
+                />
             </div>
         </div>
     )

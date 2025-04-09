@@ -1,0 +1,13 @@
+.terminal {
+    & #terminal {
+        height: 100%;
+
+        &::-webkit-scrollbar-track, & ::-webkit-scrollbar-track {
+            width: .5rem;
+        }
+
+        &::-webkit-scrollbar-thumb, & ::-webkit-scrollbar-thumb {
+            background: var(--color-gray-900);
+        }
+    }
+}
