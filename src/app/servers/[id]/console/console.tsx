@@ -12,6 +12,7 @@ import { Input } from "@/components/ui/input";
 import classNames from "classnames";
 import { theme as th } from "twin.macro";
 import styles from './console.module.scss';
+import '@xterm/xterm/css/xterm.css';
 
 const terminalProps: ITerminalOptions = {
     disableStdin: true,

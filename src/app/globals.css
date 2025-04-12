@@ -1,5 +1,4 @@
 @import "tailwindcss";
-@import '../../node_modules/@xterm/xterm/css/xterm.css';
 
 @custom-variant dark (&:is(.dark *));
 
