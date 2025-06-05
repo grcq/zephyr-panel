@@ -13,6 +13,7 @@ import classNames from "classnames";
 import { theme as th } from "twin.macro";
 import styles from './console.module.scss';
 import '@xterm/xterm/css/xterm.css';
+import { Event } from "@/lib/events";
 
 const terminalProps: ITerminalOptions = {
     disableStdin: true,
@@ -43,13 +44,16 @@ const terminalProps: ITerminalOptions = {
 
 type ConsoleContainerProps = {
     serverId: string;
+    status: string;
+    logs: [string, boolean][];
+    ws: WebSocket | null;
 }
 
 // I wouldn't know how to do this if pterodactyl was not open source, so thanks to the pterodactyl team for making this possible!
 // This whole app is inspired by the pterodactyl panel, so thanks to them for that too!
 // I am not affiliated with pterodactyl in any way, I just like their work and wanted to make my own game server panel for desktop use (windows).
 // https://github.com/pterodactyl/panel/blob/1.0-develop/resources/scripts/components/server/console/Console.tsx
-export default function ConsoleContainer({ serverId }: ConsoleContainerProps) {
+export default function ConsoleContainer({ serverId, status, logs, ws }: ConsoleContainerProps) {
     const PRELUDE = "\u001b[1m\u001b[0m\u001b[33mzephyr@daemon# \u001b[0m";
     const ref = useRef<HTMLDivElement>(null);
 
@@ -74,8 +78,6 @@ export default function ConsoleContainer({ serverId }: ConsoleContainerProps) {
             terminal.loadAddon(webLinksAddon);
             terminal.open(ref.current);
             fitAddon.fit();
-
-            handleOutput("test message from daemon", true);
             
             terminal.attachCustomKeyEventHandler((e: KeyboardEvent) => {
                 if ((e.ctrlKey || e.metaKey) && e.key === 'c') {
@@ -91,14 +93,35 @@ export default function ConsoleContainer({ serverId }: ConsoleContainerProps) {
                 }
                 return true;
             });
+
+            if (status === "stopped") {
+                handleOutput("Start the server to see the console output.", true);
+            }
         }
     }, [terminal]);
+
+    useEffect(() => {
+        if (terminal.element && logs.length > 0) {
+            for (const [data, prelude] of logs) {
+                if (!data) continue; // Skip empty logs
+                handleOutput(data, prelude);
+            }
+        }
+    }, [terminal, logs]);
 
     useEventListener("resize", () => {
         if (ref.current) {
             fitAddon.fit();
         }
     });
+
+    const sendCommand = (command: string) => {
+        if (!ws || ws.readyState !== WebSocket.OPEN) return;
+        ws.send(JSON.stringify({
+            event: Event.ServerCommand,
+            data: command
+        }));
+    }
     
     return (
         <div className={classNames("relative flex flex-col w-full", styles.terminal)}>
@@ -121,6 +144,8 @@ export default function ConsoleContainer({ serverId }: ConsoleContainerProps) {
                             setHistory([...history, command]);
                             setHistoryIndex(-1);
                             (e.target as HTMLInputElement).value = "";
+
+                            sendCommand(command);
                         }
                     }}
                     autoCorrect={'off'}

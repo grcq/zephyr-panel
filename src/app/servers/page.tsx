@@ -5,7 +5,7 @@ import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuLabel, Con
 import { cn } from "@/lib/utils";
 import { CpuIcon, HardDriveIcon, MemoryStickIcon, NetworkIcon, PlusIcon } from "lucide-react";
 import { fetch } from "@tauri-apps/plugin-http";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Server } from "@/lib/types";
 import { redirect } from "next/navigation";
 
@@ -14,7 +14,8 @@ const stateColors: { [key: number]: string } = {
     1: "bg-red-400",
     2: "bg-yellow-400",
     3: "bg-red-300",
-    4: "bg-gray-400",
+    4: "bg-yellow-300",
+    5: "bg-gray-400",
 };
 
 async function getData() {
@@ -93,6 +94,35 @@ export default function Servers() {
     useEffect(() => {
         getData().then(setData);
     }, []);
+
+    const wsRef = useRef<WebSocket | null>(null);
+    useEffect(() => {
+        const ws = new WebSocket("ws://localhost:8083/api/ws");
+        wsRef.current = ws;
+        ws.onopen = () => {
+            console.log("WebSocket connection established");
+        };
+
+        ws.onmessage = (event) => {
+            const { event: e, data } = JSON.parse(event.data);
+            if (e === "server created") {
+                setData((prev) => [...prev, data]);
+            }
+
+            if (e === "server deleted") {
+                setData((prev) => prev.filter(server => server.id !== data.id));
+            }
+        };
+
+        ws.onclose = () => {
+            console.log("WebSocket connection closed");
+        };
+
+        return () => {
+            ws.close();
+        };
+    }, []);
+
 
     return (
         <>
