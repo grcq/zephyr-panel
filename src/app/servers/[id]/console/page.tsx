@@ -8,6 +8,7 @@ import MenuBar from "../menubar";
 import { useEffect, useRef, useState } from "react";
 import { Event } from "@/lib/events";
 import { capitalize } from "@/lib/utils";
+import { EventWSClient } from "@/lib/ws";
 
 export default function ConsoleView() {
     const { id } = useParams<{ id: string }>();
@@ -29,30 +30,19 @@ export default function ConsoleView() {
         }
     });
 
-    const wsRef = useRef<WebSocket | null>(null);
+    const wsRef = useRef<EventWSClient | null>(null);
     const [logs, setLogs] = useState<[string, boolean][]>([]);
 
     useEffect(() => {
-        const ws = new WebSocket(`ws://localhost:8083/api/servers/${id}/ws`);
-        wsRef.current = ws;
-
-        const stats = () => {
-            ws.send(JSON.stringify({
-                event: Event.ServerStats
-            }));
-        }
-
-        ws.onopen = () => {
-            console.log("WebSocket connection established");
-            stats(); // Fetch initial stats
-            ws.send(JSON.stringify({
-                event: Event.ServerLog
-            }));
-        };
-
-        ws.onmessage = (event) => {
-            const { event: e, data } = JSON.parse(event.data);
-            if (e === Event.ServerStats) {
+        const ws = new EventWSClient(`/api/servers/${id}/console`)
+            .open(() => {
+                stats();
+                ws.send(Event.ServerLog);
+            })
+            .on(Event.ErrorEvent, (data) => {
+                console.error("WebSocket error:", data);
+            })
+            .on(Event.ServerStats, (data) => {
                 setStats({
                     status: capitalize(data.status),
                     cpu: {
@@ -64,48 +54,45 @@ export default function ConsoleView() {
                         max: `${(data.memory_max / 1024 / 1024 / 1024 / 1024).toFixed(2)} GB`
                     },
                     disk: {
-                        usage: `${(data.disk_usage / 1024 / 1024 / 1024 / 1024).toFixed(2)} GB`,
+                        usage: `${(data.disk_usage / 1024 / 1024 / 1024).toFixed(2)} GB`,
                         max: `${(data.disk_max / 1024 / 1024 / 1024 / 1024).toFixed(2)} GB`
                     }
                 });
-            }
-            if (e === Event.ServerLog) {
+            })
+            .on(Event.ServerLog, (data) => {
                 if (data.previous && data.lines) {
                     const mapped = data.lines.map((line: string) => [line, data.daemon]);
-                    console.log("Previous log lines received:", mapped);
                     setLogs(mapped);
                     return;
                 }
 
-                console.log("New log line received:", data);
-                setLogs([[data.message, data.daemon]])
-            }
-            
-            if (e === Event.InstallFinished) {
+                setLogs((prev) => [
+                    ...prev,
+                    [data.message, data.daemon]
+                ]);
+            })
+            .on(Event.InstallFinished, (data) => {
                 console.log("Installation finished:", data);
-            }
-
-            if (e === Event.PowerEvent) {
+            })
+            .on(Event.PowerEvent, (data) => {
                 if (data.action === "start" && data.status === "starting") {
                     setTimeout(() => {
-                        ws.send(JSON.stringify({
-                            event: Event.ServerLog
-                        }));
+                        ws.send(Event.ServerLog);
                     });
                 }
 
-                console.log("Power event received:", data);
                 setStats(prev => ({
                     ...prev,
                     status: capitalize(data.status)
                 }));
-            }
-        };
+            })
+            .connect();
 
-        ws.onclose = () => {
-            console.log("WebSocket connection closed");
-        };
+        function stats() {
+            ws.send(Event.ServerStats);
+        }
 
+        wsRef.current = ws;
         const fetchStats = setInterval(stats, 2000);
 
         return () => {
@@ -117,12 +104,7 @@ export default function ConsoleView() {
     const power = (action: "start" | "stop" | "restart" | "kill") => {
         if (!wsRef.current) return;
 
-        console.log(`Sending power action: ${action}`);
-
-        wsRef.current.send(JSON.stringify({
-            event: Event.PowerEvent,
-            data: action
-        }));
+        wsRef.current.send(Event.PowerEvent, action);
     }
 
     return (

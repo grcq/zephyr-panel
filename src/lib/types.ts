@@ -37,7 +37,7 @@ export type TemplateConfigFile = {
  * Server type
  */
 export interface Server {
-    id: number;
+    id: string;
     uuid: string;
     docker_id: string;
     name: string;

@@ -3,13 +3,15 @@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { ColumnDef, flexRender, getCoreRowModel, getPaginationRowModel, useReactTable } from "@tanstack/react-table";
 import { Button } from "./ui/button";
+import { Spinner } from "./spinner";
 
 interface DataTableProps<TData, TValue> {
     columns: ColumnDef<TData, TValue>[];
     data: TData[];
+    isLoading?: boolean;
 }
 
-export function DataTable<TData, TValue>({ columns, data }: DataTableProps<TData, TValue>) {
+export function DataTable<TData, TValue>({ columns, data, isLoading = false }: DataTableProps<TData, TValue>) {
     const table = useReactTable({
         data,
         columns,
@@ -19,7 +21,8 @@ export function DataTable<TData, TValue>({ columns, data }: DataTableProps<TData
 
     return (
         <>
-            <div className="rounded-md border">
+            <div className="rounded-md border relative">
+                <Spinner visible={isLoading} rounded="lg" />
                 <Table>
                     <TableHeader>
                         {table.getHeaderGroups().map(headerGroup => (

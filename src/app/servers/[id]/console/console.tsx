@@ -14,6 +14,7 @@ import { theme as th } from "twin.macro";
 import styles from './console.module.scss';
 import '@xterm/xterm/css/xterm.css';
 import { Event } from "@/lib/events";
+import { EventWSClient } from "@/lib/ws";
 
 const terminalProps: ITerminalOptions = {
     disableStdin: true,
@@ -46,7 +47,7 @@ type ConsoleContainerProps = {
     serverId: string;
     status: string;
     logs: [string, boolean][];
-    ws: WebSocket | null;
+    ws: EventWSClient | null;
 }
 
 // I wouldn't know how to do this if pterodactyl was not open source, so thanks to the pterodactyl team for making this possible!
@@ -100,14 +101,19 @@ export default function ConsoleContainer({ serverId, status, logs, ws }: Console
         }
     }, [terminal]);
 
+    const lastLogIndex = useRef(0);
     useEffect(() => {
-        if (terminal.element && logs.length > 0) {
-            for (const [data, prelude] of logs) {
-                if (!data) continue; // Skip empty logs
-                handleOutput(data, prelude);
-            }
+        if (!terminal.element || logs.length === 0) return;
+
+        // Print only the new logs
+        const newLogs = logs.slice(lastLogIndex.current);
+        for (const [data, prelude] of newLogs) {
+            if (!data) continue;
+            handleOutput(data, prelude);
         }
-    }, [terminal, logs]);
+
+        lastLogIndex.current = logs.length; // Update index
+    }, [logs]);
 
     useEventListener("resize", () => {
         if (ref.current) {
@@ -115,12 +121,26 @@ export default function ConsoleContainer({ serverId, status, logs, ws }: Console
         }
     });
 
-    const sendCommand = (command: string) => {
-        if (!ws || ws.readyState !== WebSocket.OPEN) return;
-        ws.send(JSON.stringify({
-            event: Event.ServerCommand,
-            data: command
-        }));
+    const sendCommand = (target: HTMLInputElement) => {
+        if (!ws || !ws.isOpen()) {
+            console.warn("WebSocket is not connected.");
+            return;
+        }
+
+        const cmd = target.value;
+        if (cmd.trim() === "") return;
+
+        if (status !== "Running" && status !== "Starting" && status !== "Stopping") {
+            console.warn("Server is not running.");
+            return;
+        }
+
+        handleOutput(cmd, false);
+        setHistory([...history, cmd]);
+        setHistoryIndex(-1);
+        target.value = "";
+
+        ws.send(Event.ServerCommand, cmd);
     }
     
     return (
@@ -137,15 +157,7 @@ export default function ConsoleContainer({ serverId, status, logs, ws }: Console
                     placeholder="Type a command..."
                     onKeyDown={(e) => {
                         if (e.key === "Enter") {
-                            const command = (e.target as HTMLInputElement).value;
-                            if (command.trim() === "") return;
-
-                            handleOutput(command, false);
-                            setHistory([...history, command]);
-                            setHistoryIndex(-1);
-                            (e.target as HTMLInputElement).value = "";
-
-                            sendCommand(command);
+                            sendCommand(e.target as HTMLInputElement);
                         }
                     }}
                     autoCorrect={'off'}

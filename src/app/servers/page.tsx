@@ -8,6 +8,8 @@ import { fetch } from "@tauri-apps/plugin-http";
 import { useEffect, useRef, useState } from "react";
 import { Server } from "@/lib/types";
 import { redirect } from "next/navigation";
+import { EventWSClient } from "@/lib/ws";
+import { Event } from "@/lib/events";
 
 const stateColors: { [key: number]: string } = {
     0: "bg-green-400",
@@ -18,14 +20,53 @@ const stateColors: { [key: number]: string } = {
     5: "bg-gray-400",
 };
 
-async function getData() {
+async function getData(): Promise<Server[]> {
     const res = await fetch("http://127.0.0.1:8083/api/servers");
     const data = await res.json();
-    console.log(data)
     return data;
 }
 
 function ServerItem({ server }: { server: Server }) {
+    const [stats, setStats] = useState({
+        cpu_usage: "???",
+        cpu_max: "???",
+        memory_usage: "???",
+        memory_max: "???",
+        disk_usage: "???",
+        disk_max: "???"
+    });
+
+    useEffect(() => {
+        const fetchStats = async () => {
+            try {
+                const res = await fetch(`http://127.0.1:8083/api/servers/${server.id}/stats`);
+                if (!res.ok) {
+                    throw new Error(`Error fetching stats: ${res.statusText}`);
+                }
+                const data = await res.json();
+                setStats({
+                    cpu_usage: (data.cpu_usage / 1024 / 1024 / 1024).toFixed(2),
+                    cpu_max: data.cpu_max.toFixed(2),
+                    memory_usage: (data.memory_usage / 1024 / 1024 / 1024).toFixed(2),
+                    memory_max: (data.memory_max / 1024 / 1024 / 1024 / 1024).toFixed(2),
+                    disk_usage: (data.disk_usage / 1024 / 1024 / 1024).toFixed(2),
+                    disk_max: (data.disk_max / 1024 / 1024 / 1024 / 1024).toFixed(2)
+                });
+            } catch (error) {
+                console.error("Failed to fetch server stats:", error);
+                setStats({
+                    cpu_usage: "Error",
+                    cpu_max: "Error",
+                    memory_usage: "Error",
+                    memory_max: "Error",
+                    disk_usage: "Error",
+                    disk_max: "Error"
+                });
+            }
+        }
+        fetchStats();
+    }, []);
+
     return (
         <ContextMenu>
             <ContextMenuTrigger asChild>
@@ -39,34 +80,34 @@ function ServerItem({ server }: { server: Server }) {
                         <div id="ip" className="text-neutral-300">
                             <p className="text-sm flex gap-2 items-center">
                                 <NetworkIcon className="w-5 h-5" />
-                                0.0.0.0:25565
+                                {server.allocations[0].ip}:{server.allocations[0].port}
                             </p>
                         </div>
                         <div id="cpu" className="text-neutral-300 space-y-1">
                             <p className="text-sm flex gap-2 items-center">
                                 <CpuIcon className="w-5 h-5" />
-                                0.00%
+                                {stats.cpu_usage}%
                             </p>
                             <p className="text-xs text-neutral-500 flex justify-center">
-                                of 100%
+                                of {stats.cpu_max}%
                             </p>
                         </div>
                         <div id="memory" className="text-neutral-300 space-y-1">
                             <p className="text-sm flex gap-2 items-center">
                                 <MemoryStickIcon className="w-5 h-5" />
-                                0.00 GB
+                                {stats.memory_usage} GB
                             </p>
                             <p className="text-xs text-neutral-500 flex justify-center">
-                                of 2 GB
+                                of {stats.memory_max} GB
                             </p>
                         </div>
                         <div id="disk" className="text-neutral-300 space-y-1">
                             <p className="text-sm flex gap-2 items-center">
                                 <HardDriveIcon className="w-5 h-5" />
-                                0.00 GB
+                                {stats.disk_usage} GB
                             </p>
                             <p className="text-xs text-neutral-500 flex justify-center">
-                                of 10 GB
+                                of {stats.disk_max} GB
                             </p>
                         </div>
                         <div id="status" className="h-full">
@@ -95,34 +136,24 @@ export default function Servers() {
         getData().then(setData);
     }, []);
 
-    const wsRef = useRef<WebSocket | null>(null);
+    const wsRef = useRef<EventWSClient | null>(null);
     useEffect(() => {
-        const ws = new WebSocket("ws://localhost:8083/api/ws");
+        const ws = new EventWSClient("/api/ws")
+            .on(Event.ServerCreated, (data) => {
+                const serverData = data as Server;
+                setData(prev => [...prev, serverData as Server]);
+            })
+            .on(Event.ServerDeleted, (data) => {
+                const serverId = data as string;
+                setData(prev => prev.filter(server => server.id !== serverId));
+            })
+            .connect();
+
         wsRef.current = ws;
-        ws.onopen = () => {
-            console.log("WebSocket connection established");
-        };
-
-        ws.onmessage = (event) => {
-            const { event: e, data } = JSON.parse(event.data);
-            if (e === "server created") {
-                setData((prev) => [...prev, data]);
-            }
-
-            if (e === "server deleted") {
-                setData((prev) => prev.filter(server => server.id !== data.id));
-            }
-        };
-
-        ws.onclose = () => {
-            console.log("WebSocket connection closed");
-        };
-
         return () => {
             ws.close();
         };
     }, []);
-
 
     return (
         <>
