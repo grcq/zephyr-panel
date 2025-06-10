@@ -3,7 +3,7 @@
 import { usePathname } from "next/navigation";
 import { Button } from "./ui/button";
 import Link from "next/link";
-import { ArrowRight, DatabaseIcon, HomeIcon, LayersIcon, ServerIcon, SettingsIcon } from "lucide-react";
+import { ArrowRight, DatabaseIcon, HomeIcon, LayersIcon, Plug, PlugIcon, ServerIcon, SettingsIcon, Unplug } from "lucide-react";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { AnimatePresence } from "motion/react"
@@ -43,6 +43,7 @@ export function Sidebar() {
                 <SidebarItem name="Servers" path="/servers" expanded={expanded} icon={ServerIcon} />
                 <SidebarItem name="Templates" path="/templates" expanded={expanded} icon={LayersIcon} />
                 <SidebarItem name="Database Hosts" path="/database" expanded={expanded} icon={DatabaseIcon} />
+                <SidebarItem name="Allocations" path="/allocations" expanded={expanded} icon={Plug} />
                 <SidebarItem name="Settings" path="/settings" expanded={expanded} icon={SettingsIcon} />
             </div>
         </aside>

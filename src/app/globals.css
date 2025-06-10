@@ -120,4 +120,8 @@
   button {
     @apply cursor-pointer select-none;
   }
+
+  code {
+    @apply font-mono text-xs bg-muted text-muted-foreground rounded px-1.5 py-0.5;
+  }
 }

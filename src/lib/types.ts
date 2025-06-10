@@ -14,7 +14,7 @@ export interface Template {
 export interface TemplateVariable {
     name: string;
     description: string;
-    environment_variable: string;
+    environment_name: string;
     default_value: string;
     type: "string" | "number" | "boolean";
     rules: string[];
